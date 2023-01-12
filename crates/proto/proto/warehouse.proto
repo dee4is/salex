@@ -1,0 +1,12 @@
+syntax="proto3";
+
+package proto.warehouse;
+
+message Warehouse {
+    string _id = 1;
+    string address = 2;
+    repeated string contacts = 3;
+    string about = 4;
+    repeated string cells = 5;
+    string schedule = 6;
+}

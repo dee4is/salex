@@ -1,0 +1,19 @@
+syntax="proto3";
+
+package proto.order;
+
+import "google/protobuf/timestamp.proto";
+import "customer.proto";
+import "product.proto";
+import "manager.proto";
+
+message Status {}
+
+message Order {
+    google.protobuf.Timestamp created_at = 1;
+    string _id = 2;
+    customer.Customer customer = 3;
+    repeated product.Product products = 4;
+    manager.Manager manager = 5;
+    Status status = 6;
+}

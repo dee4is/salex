@@ -1,0 +1,24 @@
+[package]
+name = "salex"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace.dependencies]
+anyhow = "1.0.68" # ¯\_(°ペ)_/¯
+axum = "0.6.2"
+axum-extra = { version = "0.4.2", features = ["protobuf"] }
+prost = "0.11.6"
+prost-types = "0.11.6"
+
+[dependencies]
+
+
+[workspace]
+members = [
+    "crates/api",
+    "crates/scheduler",
+    "crates/syncer",
+    "crates/proto"
+]

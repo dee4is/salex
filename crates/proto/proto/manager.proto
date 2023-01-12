@@ -1,0 +1,15 @@
+syntax="proto3";
+
+package proto.manager;
+
+import "google/protobuf/timestamp.proto";
+
+message Manager {
+    google.protobuf.Timestamp created_at = 1;
+    string _id = 2;
+    string fullname = 3;
+    string login = 4;
+    string password = 5;
+    string warehouse_id = 6;
+    repeated string contacts = 7; 
+}
