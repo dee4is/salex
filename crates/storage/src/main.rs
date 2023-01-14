@@ -1,0 +1,15 @@
+use std::net::SocketAddr;
+
+mod extractors;
+mod routes;
+
+#[tokio::main]
+async fn main() {
+    let app = routes::router();
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    println!("Listening on {}", addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}

@@ -9,15 +9,18 @@ edition = "2021"
 anyhow = "1.0.68" # ¯\_(°ペ)_/¯
 axum = "0.6.2"
 axum-extra = { version = "0.4.2", features = ["protobuf"] }
-prost = "0.11.6"
-prost-types = "0.11.6"
+speedy = "0.8.5"
+serde = { version = "1.0", features = ["derive"] }
+
+tokio = { version = "1.24.1", features = ["full"] }
 
 [dependencies]
 
 
 [workspace]
 members = [
-    "crates/api",
+    "crates/orders",
+    "crates/storage",
     "crates/scheduler",
     "crates/syncer",
     "crates/proto"
