@@ -11,4 +11,9 @@ speedy = { workspace = true }
 anyhow = { workspace = true }
 proto = { path = "../proto" }
 
+serde = { workspace = true }
+
 tokio = { workspace = true }
+futures = { workspace = true }
+
+mongodb = { workspace = true }

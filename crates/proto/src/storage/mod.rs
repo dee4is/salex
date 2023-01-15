@@ -8,7 +8,7 @@ use crate::warehouse::Warehouse;
 pub struct Storageable {
     pub _id: String,
     pub product_id: String,
-    pub cell: Cell,
+    pub cell_id: String,
 }
 
 #[derive(

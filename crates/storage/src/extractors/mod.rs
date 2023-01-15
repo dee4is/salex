@@ -3,6 +3,7 @@ use axum::{http::StatusCode, response::IntoResponse};
 pub mod speedy;
 
 // Make our own error that wraps `anyhow::Error`.
+#[derive(Debug)]
 pub struct Error(anyhow::Error);
 
 pub type Result<T> = core::result::Result<T, Error>;
