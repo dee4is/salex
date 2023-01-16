@@ -52,7 +52,7 @@ pub async fn get_storageables(
         .database("storage")
         .collection::<Storageable>("storageable");
     let mut docs = vec![];
-    let mut cursor = col.find(doc! {"cell_id": cell_id}, None).await?;
+    let mut cursor = col.find(doc! {"cell": cell_id}, None).await?;
     while let Some(doc) = cursor.try_next().await? {
         docs.push(doc);
     }

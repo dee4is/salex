@@ -17,3 +17,5 @@ tokio = { workspace = true }
 futures = { workspace = true }
 
 mongodb = { workspace = true }
+
+config  = { workspace = true }

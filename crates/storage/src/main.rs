@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 
+mod config;
 mod extractors;
 mod routes;
 
