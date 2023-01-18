@@ -1,6 +1,6 @@
 use axum::{http::StatusCode, response::IntoResponse};
 
-pub mod speedy;
+pub mod bincode;
 
 // Make our own error that wraps `anyhow::Error`.
 #[derive(Debug)]

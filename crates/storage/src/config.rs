@@ -8,7 +8,10 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         config::Config::builder()
-            .add_source(config::File::with_name("config.toml"))
+            // .add_source(config::File::with_name("config.toml"))
+            .add_source(config::File::with_name(
+                "/home/h/work/rust/salex/config.toml",
+            ))
             .build()
             .unwrap()
             .try_deserialize()

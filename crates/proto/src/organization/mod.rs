@@ -1,9 +1,7 @@
-use speedy::{Readable, Writable};
-
-#[derive(serde::Serialize, serde::Deserialize, Readable, Writable, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Configuration {}
 
-#[derive(serde::Serialize, serde::Deserialize, Readable, Writable, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Organization {
     pub _id: String,
     pub fullname: String,
@@ -14,7 +12,7 @@ pub struct Organization {
     pub created_at: i64,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Readable, Writable, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub enum Plan {
     Free = 0,
     Pro = 1,

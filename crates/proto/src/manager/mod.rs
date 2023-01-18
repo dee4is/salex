@@ -1,8 +1,6 @@
-use speedy::{Readable, Writable};
-
 use crate::warehouse::Warehouse;
 
-#[derive(serde::Serialize, serde::Deserialize, Readable, Writable, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Manager {
     pub _id: String,
     pub fullname: String,
@@ -13,7 +11,7 @@ pub struct Manager {
     pub created_at: i64,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Readable, Writable, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub enum Contact {
     Phone(String),
 }

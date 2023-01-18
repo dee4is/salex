@@ -5,12 +5,12 @@ use axum::{
     http::Request,
     response::{IntoResponse, Response},
 };
-use speedy::{LittleEndian, Readable, Writable};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-pub struct Speedy<T>(pub T);
+pub struct Bincode<T>(pub T);
 
 #[async_trait]
-impl<S, B, T: for<'a> Readable<'a, LittleEndian>> FromRequest<S, B> for Speedy<T>
+impl<S, B, T: for<'a> Deserialize<'a>> FromRequest<S, B> for Bincode<T>
 where
     Bytes: FromRequest<S, B>,
     B: Send + 'static,
@@ -22,16 +22,16 @@ where
         let body = Bytes::from_request(req, state)
             .await
             .map_err(IntoResponse::into_response)?;
-        let proto = T::read_from_buffer(&body)
+        let proto: T = bincode::deserialize(&body)
             .map_err(|e| super::Error(anyhow::anyhow!(e)).into_response())?;
 
         Ok(Self(proto))
     }
 }
 
-impl<T: Writable<LittleEndian>> IntoResponse for Speedy<T> {
+impl<T: Serialize> IntoResponse for Bincode<T> {
     fn into_response(self) -> Response {
-        let res = self.0.write_to_vec().unwrap();
+        let res = bincode::serialize(&self.0).unwrap();
 
         // its often easiest to implement `IntoResponse` by calling other implementations
         Response::builder()

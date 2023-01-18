@@ -1,19 +1,13 @@
-use speedy::{Readable, Writable};
-
 use crate::storage::Storageable;
 
-#[derive(
-    serde::Serialize, serde::Deserialize, Default, Readable, Writable, Clone, PartialEq, Eq,
-)]
+#[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
 pub struct Dimensions {
     pub width: i32,
     pub height: i32,
     pub length: i32,
     pub weight: i32,
 }
-#[derive(
-    serde::Serialize, serde::Deserialize, Default, Readable, Writable, Clone, PartialEq, Eq,
-)]
+#[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
 pub struct Product {
     pub _id: String,
     pub name: String,
@@ -28,9 +22,7 @@ pub struct Product {
     pub created_at: i64,
 }
 
-#[derive(
-    serde::Serialize, serde::Deserialize, Default, Readable, Writable, Clone, PartialEq, Eq,
-)]
+#[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
 pub struct Group {
     pub _id: String,
     pub name: String,

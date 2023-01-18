@@ -7,10 +7,13 @@ edition = "2021"
 
 [workspace.dependencies]
 anyhow = "1.0.68" # ¯\_(°ペ)_/¯
+
+hyper = { version = "0.14", features = ["client"] }
 axum = { version = "0.6.2", features = ["query"] }
 axum-extra = { version = "0.4.2", features = ["protobuf"] }
-speedy = "0.8.5"
+
 serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3.3"
 
 tokio = { version = "1.24.1", features = ["full"] }
 futures = "0.3.25"
@@ -19,9 +22,14 @@ mongodb = "2.3.1"
 
 config = "0.13.3"
 
+tower-http = { version = "0.3.5", features = ["full"] }
+
+tracing = "0.1.37"
+tracing-subscriber = "0.3.16"
+
+
+
 [dependencies]
-
-
 
 [workspace]
 members = [

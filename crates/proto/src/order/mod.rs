@@ -1,8 +1,6 @@
-use speedy::{Readable, Writable};
-
-#[derive(serde::Serialize, serde::Deserialize, Readable, Writable, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Status {}
-#[derive(serde::Serialize, serde::Deserialize, Readable, Writable, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Order {
     pub _id: String,
     pub customer: super::customer::Customer,

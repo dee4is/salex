@@ -1,30 +1,36 @@
-use crate::extractors::{self, speedy::Speedy, Result};
+use crate::extractors::{self, bincode::Bincode, Result};
 use axum::extract::{Path, State};
 use futures::stream::TryStreamExt;
 
-use mongodb::bson::doc;
+use mongodb::bson::{doc, oid::ObjectId};
 use proto::storage::{Cell, Storageable};
 
 use super::AppState;
 
 pub async fn new_cell(
     State(state): State<AppState>,
-    Speedy(cell): Speedy<Cell>,
-) -> Result<Speedy<String>> {
+    Bincode(mut cell): Bincode<Cell>,
+) -> Result<Bincode<String>> {
     let col = state
         .mongo
         .database("storage")
         .collection::<proto::storage::Cell>("cells");
 
+    cell._id = ObjectId::default().to_string();
+
     let res = col.insert_one(&cell, None).await?;
 
-    Ok(extractors::speedy::Speedy(res.inserted_id.to_string()))
+    Ok(extractors::bincode::Bincode(
+        ObjectId::parse_str(res.inserted_id.as_str().unwrap())
+            .unwrap()
+            .to_hex(),
+    ))
 }
 
 pub async fn scan_storageable(
     Path((cell_id, storageable_id)): Path<(String, String)>,
     State(state): State<AppState>,
-) -> Result<Speedy<u64>> {
+) -> Result<Bincode<u64>> {
     let col = state
         .mongo
         .database("storage")
@@ -40,13 +46,13 @@ pub async fn scan_storageable(
         )
         .await?;
 
-    Ok(extractors::speedy::Speedy(res.modified_count))
+    Ok(extractors::bincode::Bincode(res.modified_count))
 }
 
 pub async fn get_storageables(
     Path(cell_id): Path<String>,
     State(state): State<AppState>,
-) -> Result<Speedy<Vec<Storageable>>> {
+) -> Result<Bincode<Vec<Storageable>>> {
     let col = state
         .mongo
         .database("storage")
@@ -57,5 +63,5 @@ pub async fn get_storageables(
         docs.push(doc);
     }
 
-    Ok(extractors::speedy::Speedy(docs))
+    Ok(extractors::bincode::Bincode(docs))
 }

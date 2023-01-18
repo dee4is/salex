@@ -1,22 +1,16 @@
-use speedy::{Readable, Writable};
+use crate::{product::Product, warehouse::Warehouse};
 
-use crate::{product::Product, warehouse::Warehouse, Value};
-
-#[derive(
-    serde::Serialize, serde::Deserialize, Readable, Writable, Default, Clone, PartialEq, Eq,
-)]
+#[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
 pub struct Storageable {
     pub _id: String,
-    pub product: Value<Product>,
-    pub cell: Value<Cell>,
-    pub warehouse: Value<Warehouse>,
+    pub product: String,
+    pub cell: String,
+    pub warehouse: String,
 }
 
-#[derive(
-    serde::Serialize, serde::Deserialize, Readable, Writable, Default, Clone, PartialEq, Eq,
-)]
+#[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
 pub struct Cell {
     pub _id: String,
     pub name: String,
-    pub warehouse: Value<Warehouse>,
+    pub warehouse: String,
 }

@@ -6,19 +6,18 @@ use mongodb::bson::{self, doc, Document};
 use proto::{
     product::{FindProductsQuery, Product},
     storage::Storageable,
-    Value,
 };
 use serde::Deserialize;
 
-use crate::extractors::{self, speedy::Speedy, Result};
+use crate::extractors::{self, bincode::Bincode, Result};
 
 use super::AppState;
 
 pub async fn get_products(
     State(state): State<AppState>,
     query: Query<FindProductsQuery>,
-    Speedy(products): Speedy<Vec<String>>,
-) -> Result<Speedy<Vec<Product>>> {
+    Bincode(products): Bincode<Vec<String>>,
+) -> Result<Bincode<Vec<Product>>> {
     let col = state
         .mongo
         .database("storage")
@@ -44,7 +43,7 @@ pub async fn get_products(
     if let Some(warehouse) = &query.warehouse {
         pipeline.push(doc! {
                 "$match": {
-                    "warehouse": warehouse,
+                    "storage.warehouse": warehouse,
                 }
         })
     }
@@ -54,5 +53,5 @@ pub async fn get_products(
         docs.push(bson::from_document(doc)?);
     }
 
-    Ok(extractors::speedy::Speedy(docs))
+    Ok(extractors::bincode::Bincode(docs))
 }

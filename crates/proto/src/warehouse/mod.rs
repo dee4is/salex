@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use speedy::{Readable, Writable};
 
 use crate::manager::Contact;
 
 #[derive(
-    serde::Serialize, serde::Deserialize, Readable, Writable, Default, Clone, PartialEq, Eq,
+    serde::Serialize, serde::Deserialize, Default, Clone
 )]
 pub struct Warehouse {
     pub _id: String,
