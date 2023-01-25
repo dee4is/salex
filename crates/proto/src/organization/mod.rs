@@ -1,5 +1,5 @@
 pub mod header {
-    pub const ORGANIZATION: &'static str = "X-Organization-Id";
+    pub const ORGANIZATION: &str = "X-Organization-Id";
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
