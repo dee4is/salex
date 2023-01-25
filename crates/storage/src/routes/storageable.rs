@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
 use axum::extract::{Path, Query, State};
+use futures::TryStreamExt;
 use mongodb::bson::{doc, oid::ObjectId};
 use proto::storage::Storageable;
 use serde::Deserialize;
 
-use crate::extractors::{self, bincode::Bincode, Result};
+use salex_core::extractors::{self, auth::AuthData, bincode::Bincode, Result};
 
 use super::AppState;
 
@@ -20,8 +21,9 @@ impl Default for Batch {
     }
 }
 
-pub async fn add_storageable(
+pub async fn insert_storageable(
     Path((cell, product)): Path<(String, String)>,
+    auth: AuthData,
     State(state): State<AppState>,
     batch: Option<Query<Batch>>,
 ) -> Result<Bincode<HashMap<usize, String>>> {
@@ -37,7 +39,7 @@ pub async fn add_storageable(
     }
     let col = state
         .mongo
-        .database("storage")
+        .database(&auth.organization)
         .collection::<proto::storage::Storageable>("storageable");
     let res = col.insert_many(items, None).await?;
 
@@ -56,11 +58,12 @@ pub async fn add_storageable(
 
 pub async fn consume_storageable(
     State(state): State<AppState>,
+    auth: AuthData,
     Bincode(ids): Bincode<Vec<String>>,
 ) -> Result<Bincode<u64>> {
     let col = state
         .mongo
-        .database("storage")
+        .database(&auth.organization)
         .collection::<proto::storage::Storageable>("storageable");
 
     let res = col.delete_many(doc! {"_id": {"$in": ids}}, None).await?;
@@ -70,11 +73,12 @@ pub async fn consume_storageable(
 
 pub async fn get_remainders(
     State(state): State<AppState>,
+    auth: AuthData,
     Bincode(product_ids): Bincode<Vec<String>>,
 ) -> Result<Bincode<HashMap<String, u64>>> {
     let col = state
         .mongo
-        .database("storage")
+        .database(&auth.organization)
         .collection::<proto::storage::Storageable>("storageable");
 
     let mut remainders = HashMap::default();
@@ -86,6 +90,49 @@ pub async fn get_remainders(
     }
 
     Ok(extractors::bincode::Bincode(remainders))
+}
+
+pub async fn get_storageables(
+    Path((warehouse_id, cell_id)): Path<(String, String)>,
+    auth: AuthData,
+    State(state): State<AppState>,
+) -> Result<Bincode<Vec<Storageable>>> {
+    let col = state
+        .mongo
+        .database(&auth.organization)
+        .collection::<Storageable>("storageable");
+    let mut docs = vec![];
+    let mut cursor = col
+        .find(doc! {"cell._id": cell_id, "warehouse": warehouse_id}, None)
+        .await?;
+    while let Some(doc) = cursor.try_next().await? {
+        docs.push(doc);
+    }
+
+    Ok(extractors::bincode::Bincode(docs))
+}
+
+pub async fn scan_storageable(
+    Path((cell_id, storageable_id)): Path<(String, String)>,
+    auth: AuthData,
+    State(state): State<AppState>,
+) -> Result<Bincode<u64>> {
+    let col = state
+        .mongo
+        .database(&auth.organization)
+        .collection::<proto::storage::Cell>("storageable");
+
+    let res = col
+        .update_one(
+            doc! {"_id": storageable_id},
+            doc! { "$set": {
+                "cell": cell_id
+            } },
+            None,
+        )
+        .await?;
+
+    Ok(extractors::bincode::Bincode(res.modified_count))
 }
 
 #[cfg(test)]
@@ -111,18 +158,14 @@ mod tests {
 
         let client = hyper::Client::new();
 
-        let payload = proto::storage::Cell {
-            _id: "".into(),
-            name: "A10".into(),
-            warehouse: "".into(),
-        };
+        let warehouse_id = "empty";
 
         let response = client
             .request(
                 Request::builder()
                     .method("PUT")
-                    .uri(format!("http://{addr}/cell"))
-                    .body(Body::from(bincode::serialize(&payload).unwrap()))
+                    .uri(format!("http://{addr}/{warehouse_id}/cells/A10"))
+                    .body(Body::empty())
                     .unwrap(),
             )
             .await

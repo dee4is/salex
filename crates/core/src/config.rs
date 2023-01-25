@@ -3,6 +3,13 @@ use serde::Deserialize;
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub mongo: String,
+    pub meili: Meili,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Meili {
+    pub key: String,
+    pub uri: String,
 }
 
 impl Default for Config {

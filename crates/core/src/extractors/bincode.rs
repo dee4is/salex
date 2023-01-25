@@ -5,7 +5,7 @@ use axum::{
     http::Request,
     response::{IntoResponse, Response},
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 pub struct Bincode<T>(pub T);
 

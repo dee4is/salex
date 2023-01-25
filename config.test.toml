@@ -1,1 +1,5 @@
 mongo = ""
+# Search engine setup
+[meili]
+key = ""
+uri = ""

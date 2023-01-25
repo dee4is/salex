@@ -1,5 +1,6 @@
 use axum::{http::StatusCode, response::IntoResponse};
 
+pub mod auth;
 pub mod bincode;
 
 // Make our own error that wraps `anyhow::Error`.

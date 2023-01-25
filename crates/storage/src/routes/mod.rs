@@ -1,14 +1,16 @@
-use crate::{config::Config, extractors::Result};
 use axum::{
-    routing::{delete, post, put},
+    routing::{delete, get, post, put},
     Router,
 };
 use mongodb::{options::ClientOptions, Client};
 use tower_http::trace::TraceLayer;
 
-mod cell;
+use salex_core::extractors::Result;
+use salex_core::config::Config;
+
 mod product;
 mod storageable;
+mod warehouse;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -30,16 +32,21 @@ pub async fn router() -> Result<Router> {
     Ok(Router::new()
         .layer(TraceLayer::new_for_http())
         .route("/consume", delete(storageable::consume_storageable))
-        .route("/cell", put(cell::new_cell))
         .route("/remainders", post(storageable::get_remainders))
         .route("/products", post(product::get_products))
+        .route("/products", put(product::insert_products))
+        .route("/cells/:warehouse_id/:cell_id", put(warehouse::insert_cell))
         .route(
-            "/:cell_id/storageable/:storageable_id",
-            post(cell::scan_storageable),
+            "/storageables/:warehouse_id/:cell_id",
+            get(storageable::get_storageables),
         )
         .route(
-            "/:cell_id/product/:product_id",
-            put(storageable::add_storageable),
+            "/scan/:cell_id/:storageable_id",
+            post(storageable::scan_storageable),
+        )
+        .route(
+            "/storageables/insert/:cell_id/:product_id",
+            put(storageable::insert_storageable),
         )
         .with_state(state))
 }
