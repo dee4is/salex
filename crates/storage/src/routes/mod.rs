@@ -2,27 +2,18 @@ use axum::{
     routing::{delete, get, post, put},
     Router,
 };
-use mongodb::{options::ClientOptions, Client};
 use tower_http::trace::TraceLayer;
 
 use salex_core::extractors::Result;
-use salex_core::config::Config;
+use salex_core::{config::Config, AppState};
 
 mod product;
 mod storageable;
 mod warehouse;
 
-#[derive(Clone)]
-pub struct AppState {
-    mongo: Client,
-    config: Config,
-}
-
 pub async fn router() -> Result<Router> {
     let config = Config::default();
-    let options = ClientOptions::parse(&config.mongo).await?;
-    let mongo = Client::with_options(options)?;
-    let state = AppState { mongo, config };
+    let state = AppState::new(config).await?;
 
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "storage=debug,tower_http=debug")

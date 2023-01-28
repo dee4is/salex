@@ -18,3 +18,7 @@ hyper = { workspace = true }
 serde_json = { workspace = true }
 
 config  = { workspace = true }
+
+mongodb = { workspace = true }
+
+meilisearch-sdk = { workspace = true }

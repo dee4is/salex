@@ -1,8 +1,7 @@
 use axum::extract::State;
-use futures::future::join_all;
 use salex_core::extractors::{self, auth::AuthData, bincode::Bincode, Result};
 
-use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{doc, oid::ObjectId, to_bson};
 use proto::{manager::Manager, organization::Organization, warehouse::Warehouse};
 
 use super::AppState;
@@ -25,19 +24,19 @@ pub async fn insert_organization(
         .database(&org._id)
         .collection::<Warehouse>("warehouses");
 
-    let mut warehouse = Warehouse::default();
-
-    warehouse._id = ObjectId::default().to_hex();
+    let warehouse = Warehouse {
+        _id: ObjectId::default().to_hex(),
+        ..Default::default()
+    };
 
     let war_res = col.insert_one(&warehouse, None);
 
-    let mut director = Manager::default();
-
-    director._id = ObjectId::default().to_hex();
-
-    director.organization = org._id.clone();
-
-    director.warehouse = warehouse._id.clone();
+    let director = Manager {
+        _id: ObjectId::default().to_hex(),
+        organization: org._id.clone(),
+        warehouse: warehouse._id.clone(),
+        ..Default::default()
+    };
 
     let col = state
         .mongo
@@ -69,4 +68,36 @@ pub async fn insert_manager_to_organization(
     Ok(extractors::bincode::Bincode(
         res.inserted_id.as_str().unwrap().to_string(),
     ))
+}
+
+pub async fn update_organization_config(
+    State(state): State<AppState>,
+    auth: AuthData,
+    Bincode(conf): Bincode<proto::organization::Configuration>,
+) -> Result<Bincode<String>> {
+    let col = state
+        .mongo
+        .database(&auth.organization)
+        .collection::<Manager>("managers");
+    let manager = col
+        .find_one(doc! {"_id": auth.manager}, None)
+        .await?
+        .unwrap();
+
+    if manager.acl.organization {
+        let col = state
+            .mongo
+            .database(&auth.organization)
+            .collection::<Manager>("organizations");
+        col.update_one(
+            doc! {"_id": auth.organization},
+            doc! {"$set": {"config": to_bson(&conf).unwrap()}},
+            None,
+        )
+        .await?;
+    } else {
+        return Err(anyhow::anyhow!("Not have permissions").into());
+    }
+
+    Ok(extractors::bincode::Bincode("".into()))
 }

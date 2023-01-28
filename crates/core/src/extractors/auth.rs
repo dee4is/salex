@@ -6,6 +6,7 @@ use axum::{
 
 pub struct AuthData {
     pub organization: String,
+    pub manager: String,
 }
 
 #[async_trait]
@@ -16,18 +17,31 @@ where
     type Rejection = (StatusCode, String);
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        if let Some(organization) = parts.headers.get(proto::organization::header::ORGANIZATION) {
-            Ok(AuthData {
-                organization: organization.clone().to_str().unwrap().to_string(),
-            })
-        } else {
-            Err((
+        let organization = parts
+            .headers
+            .get(proto::organization::header::ORGANIZATION)
+            .ok_or((
                 StatusCode::BAD_REQUEST,
                 format!(
                     "{} header is missing",
                     proto::organization::header::ORGANIZATION
                 ),
             ))
-        }
+            .unwrap();
+        let manager = parts
+            .headers
+            .get(proto::manager::header::MANAGER)
+            .ok_or((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "{} header is missing",
+                    proto::organization::header::ORGANIZATION
+                ),
+            ))
+            .unwrap();
+        Ok(AuthData {
+            organization: organization.clone().to_str().unwrap().to_string(),
+            manager: manager.clone().to_str().unwrap().to_string(),
+        })
     }
 }

@@ -2,8 +2,12 @@ pub mod header {
     pub const ORGANIZATION: &str = "X-Organization-Id";
 }
 
+pub mod orders;
+
 #[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
-pub struct Configuration {}
+pub struct Configuration {
+    pub orders: orders::Config,
+}
 
 #[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
 pub struct Organization {

@@ -20,14 +20,14 @@ pub async fn get_products(
         .database(&auth.organization)
         .collection::<Product>("products");
     let mut pipeline = vec![];
-    if products.len() > 0 {
+    if !products.is_empty() {
         pipeline.push(doc! {
             "$match": {
                 "_id": {"$in": products},
             }
         })
     }
-    if let Some(_) = query.storage {
+    if query.storage.is_some() {
         pipeline.push(doc! {
             "$lookup": {
                 "from": "storageable",
@@ -70,12 +70,8 @@ pub async fn insert_products(
     let res = col.insert_many(&products, None).await?;
 
     tokio::spawn(async move {
-        state
-            .config
-            .meili
-            .insert_documents(format!("{}-products", auth.organization), &products)
-            .await
-            .unwrap();
+        let index = state.meili.index("products");
+        index.add_documents(&products, Some("_id")).await.unwrap();
     });
 
     Ok(extractors::bincode::Bincode(res.inserted_ids))

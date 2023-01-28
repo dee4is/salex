@@ -23,7 +23,7 @@ where
             .await
             .map_err(IntoResponse::into_response)?;
         let proto: T = bincode::deserialize(&body)
-            .map_err(|e| super::Error(anyhow::anyhow!(e)).into_response())?;
+            .map_err(|e| super::Error::Any(anyhow::anyhow!(e)).into_response())?;
 
         Ok(Self(proto))
     }
