@@ -35,7 +35,7 @@ impl<T: Serialize> IntoResponse for Bincode<T> {
 
         // its often easiest to implement `IntoResponse` by calling other implementations
         Response::builder()
-            .header("Content-Type", "application/speedy")
+            .header("Content-Type", "application/bincode")
             .body(body::boxed(Body::from(res)))
             .unwrap()
     }

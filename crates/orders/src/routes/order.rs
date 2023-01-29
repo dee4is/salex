@@ -9,25 +9,32 @@ use super::AppState;
 pub async fn insert_order(
     State(state): State<AppState>,
     auth: AuthData,
-    Bincode(mut order): Bincode<Order>,
-) -> Result<Bincode<String>> {
+    Bincode(orders): Bincode<Vec<Order>>,
+) -> Result<Bincode<Vec<String>>> {
     let col = state
         .mongo
         .database(&auth.organization)
         .collection::<Order>("orders");
 
-    order._id = ObjectId::default().to_hex();
+    let mut ids = vec![];
 
-    col.insert_one(&order, None).await?;
+    let orders = orders
+        .into_iter()
+        .map(|mut o| {
+            o._id = ObjectId::default().to_hex();
+            ids.push(o._id.clone());
+            o
+        })
+        .collect::<Vec<Order>>();
 
-    let id = order._id.clone();
+    col.insert_many(&orders, None).await?;
 
     tokio::spawn(async move {
         let index = state.meili.index("orders");
-        index.add_documents(&[order], Some("_id")).await.unwrap();
+        index.add_documents(&orders, Some("_id")).await.unwrap();
     });
 
-    Ok(extractors::bincode::Bincode(id))
+    Ok(extractors::bincode::Bincode(ids))
 }
 
 pub async fn update_order(
