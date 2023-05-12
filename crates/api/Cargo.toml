@@ -1,0 +1,34 @@
+[package]
+name = "orders"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = { workspace = true }
+anyhow = { workspace = true }
+proto = { path = "../proto" }
+
+tokio = { workspace = true }
+futures = { workspace = true }
+
+mongodb = { workspace = true }
+
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+tower-http = { workspace = true }
+
+serde = { workspace = true }
+
+meilisearch-sdk = { workspace = true }
+
+config = { workspace = true }
+
+bincode = { workspace = true }
+
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "mysql", "macros", "migrate" ] }
+
+[dev-dependencies]
+hyper = { workspace = true }

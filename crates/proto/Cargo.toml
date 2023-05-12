@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 serde = { workspace = true }
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "mysql", "macros", "migrate", "time" ] }
+anyhow = { workspace = true }
+async-trait = "0.1.68"
+time = "0.3.21"

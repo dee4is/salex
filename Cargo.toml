@@ -26,11 +26,6 @@ meilisearch-sdk = "0.21.2"
 
 [workspace]
 members = [
-    "crates/core",
-    "crates/organization",
-    "crates/orders",
-    "crates/storage",
-    "crates/scheduler",
-    "crates/syncer",
+    "crates/api",
     "crates/proto"
 ]

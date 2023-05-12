@@ -1,0 +1,19 @@
+#![deny(clippy::all)]
+
+use std::net::SocketAddr;
+
+mod base;
+mod routes;
+
+use base::extractors::Result;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let app = routes::router().await?;
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
+    println!("Listening on {addr}");
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await?;
+    Ok(())
+}
