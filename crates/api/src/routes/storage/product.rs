@@ -1,78 +1,62 @@
-use std::collections::HashMap;
-
-use axum::extract::{Query, State};
-use futures::TryStreamExt;
-use mongodb::bson::{self, doc, oid::ObjectId, Bson};
-use proto::product::{FindProductsQuery, Product};
+use axum::extract::State;
+use proto::prisma::*;
 
 use crate::base::extractors::{self, auth::AuthData, bincode::Bincode, Result};
 
 use super::AppState;
 
-pub async fn get_products(
+#[derive(serde::Deserialize)]
+pub struct FindProductsQuery {}
+
+pub async fn find_products(
     State(state): State<AppState>,
     auth: AuthData,
-    query: Query<FindProductsQuery>,
-    Bincode(products): Bincode<Vec<String>>,
-) -> Result<Bincode<Vec<Product>>> {
-    let col = state
-        .mongo
-        .database(&auth.organization)
-        .collection::<Product>("products");
-    let mut pipeline = vec![];
-    if !products.is_empty() {
-        pipeline.push(doc! {
-            "$match": {
-                "_id": {"$in": products},
-            }
-        })
-    }
-    if query.storage.is_some() {
-        pipeline.push(doc! {
-            "$lookup": {
-                "from": "storageable",
-                "localField": "_id",
-                "foreignField": "product",
-                "as": "storage"
-            }
-        })
-    }
-    if let Some(warehouse) = &query.warehouse {
-        pipeline.push(doc! {
-                "$match": {
-                    "storage.warehouse": warehouse,
-                }
-        })
-    }
-    let mut cursor = col.aggregate(pipeline, None).await?;
-    let mut docs: Vec<Product> = vec![];
-    while let Some(doc) = cursor.try_next().await? {
-        docs.push(bson::from_document(doc)?);
-    }
+    // query: Query<FindProductsQuery>,
+    Bincode(products): Bincode<FindProductsQuery>,
+) -> Result<Bincode<Vec<product::Data>>> {
+    let products = state
+        .prisma
+        .product()
+        .find_many(vec![product::WhereParam::OrganizationId(
+            read_filters::IntFilter::Equals(auth.organization),
+        )])
+        .take(50)
+        .exec()
+        .await?;
 
-    Ok(extractors::bincode::Bincode(docs))
+    Ok(extractors::bincode::Bincode(products))
 }
 
 pub async fn insert_products(
     auth: AuthData,
     State(state): State<AppState>,
-    Bincode(mut products): Bincode<Vec<Product>>,
-) -> Result<Bincode<HashMap<usize, Bson>>> {
-    let col = state
-        .mongo
-        .database(&auth.organization)
-        .collection::<Product>("products");
+    Bincode(products): Bincode<Vec<product::Data>>,
+) -> Result<()> {
+    let prisma = state.prisma;
+    prisma
+        ._transaction()
+        .run(|client| async move {
+            for product in products {
+                client
+                    .product()
+                    .create(
+                        product.name,
+                        product.description,
+                        product.price,
+                        organization::UniqueWhereParam::IdEquals(auth.organization),
+                        vec![],
+                    )
+                    .exec()
+                    .await?;
+            }
+            Ok::<(), anyhow::Error>(())
+        })
+        .await?;
 
-    products
-        .iter_mut()
-        .for_each(|p| p._id = ObjectId::default().to_hex());
+    // tokio::spawn(async move {
+    //     let index = state.meili.index("products");
+    //     index.add_documents(&products, Some("_id")).await.unwrap();
+    // });
 
-    let res = col.insert_many(&products, None).await?;
-
-    tokio::spawn(async move {
-        let index = state.meili.index("products");
-        index.add_documents(&products, Some("_id")).await.unwrap();
-    });
-
-    Ok(extractors::bincode::Bincode(res.inserted_ids))
+    Ok(())
 }

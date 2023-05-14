@@ -1,6 +1,7 @@
+use futures::stream::BoxStream;
 use time::Date;
 
-use crate::{manager::Contact, Entitie};
+use crate::manager::Contact;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Customer {
@@ -13,98 +14,84 @@ pub struct Customer {
     pub updated_at: Option<time::OffsetDateTime>,
 }
 
-#[async_trait::async_trait]
-impl Entitie<Customer> for Customer {
-    const TABLE_NAME: &'static str = "customers";
+// pub enum CustomerFilter {
+//     OrganizationId(u64),
+// }
 
-    async fn find(pool: &sqlx::MySqlPool) -> anyhow::Result<Vec<Customer>> {
-        sqlx::query_as!(Customer, "SELECT * FROM customers")
-            .fetch_all(pool)
-            .await
-            .map_err(|e| anyhow::anyhow!("{}", e))
-    }
+// impl ToSql for Vec<CustomerFilter> {
+//     fn to_sql(&self) -> String {
+//         let mut result = String::new();
+//         for (idx, filter) in self.iter().enumerate() {
+//             match filter {
+//                 CustomerFilter::OrganizationId(id) => {
+//                     result.push_str(&format!("organization_id = {}", id))
+//                 } // Self::Name(name) => format!("name = {}", name),
+//             }
+//             if idx != self.len() {
+//                 result.push(',')
+//             }
+//         }
+//         result
+//     }
+// }
 
-    async fn find_by_id(pool: &sqlx::MySqlPool, id: i32) -> anyhow::Result<Customer> {
-        Ok(
-            sqlx::query_as!(Customer, "SELECT * FROM customers WHERE id = ?", id)
-                .fetch_one(pool)
-                .await?,
-        )
-    }
+// #[async_trait::async_trait]
+// impl Entitie<Customer> for Customer {
+//     const TABLE_NAME: &'static str = "customers";
+//     type Filter = Vec<CustomerFilter>;
 
-    async fn insert(pool: &sqlx::MySqlPool, item: Customer) -> anyhow::Result<()> {
-        sqlx::query!(
-            "INSERT INTO customers (name, address, organization_id) VALUES (?, ?, ?)",
-            item.name,
-            item.address,
-            item.organization_id
-        )
-        .execute(pool)
-        .await
-        .map_err(|e| anyhow::anyhow!("{}", e))?;
-        Ok(())
-    }
+//     async fn find(
+//         pool: &sqlx::MySqlPool,
+//         filter: Self::Filter,
+//     ) -> BoxStream<Result<Customer, sqlx::Error>> {
+//         sqlx::query_as!(Customer, "SELECT * FROM customers where ?", filter.to_sql()).fetch(pool)
+//     }
 
-    fn update<'life0, 'async_trait>(
-        pool: &'life0 sqlx::MySqlPool,
-        item: Customer,
-    ) -> core::pin::Pin<
-        Box<
-            dyn core::future::Future<Output = anyhow::Result<()>>
-                + core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-    {
-        todo!()
-    }
+//     async fn find_by_id(pool: &sqlx::MySqlPool, id: u64) -> anyhow::Result<Customer> {
+//         Ok(
+//             sqlx::query_as!(Customer, "SELECT * FROM customers WHERE id = ?", id)
+//                 .fetch_one(pool)
+//                 .await?,
+//         )
+//     }
 
-    fn delete<'life0, 'async_trait>(
-        pool: &'life0 sqlx::MySqlPool,
-        id: i32,
-    ) -> core::pin::Pin<
-        Box<
-            dyn core::future::Future<Output = anyhow::Result<()>>
-                + core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-    {
-        todo!()
-    }
+//     async fn insert(
+//         pool: &sqlx::MySqlPool,
+//         meili: &meilisearch_sdk::Client,
+//         mut item: Customer,
+//     ) -> anyhow::Result<u64> {
+//         let mut tx = pool.begin().await?;
+//         sqlx::query!(
+//             "INSERT INTO customers (name, address, organization_id) VALUES (?, ?, ?);",
+//             item.name,
+//             item.address,
+//             item.organization_id
+//         )
+//         .execute(&mut tx)
+//         .await?;
+//         item.id = sqlx::query!("SELECT LAST_INSERT_ID() as id;")
+//             .fetch_one(&mut tx)
+//             .await?
+//             .id
+//             .unwrap_or_default();
+//         Customer::index(meili, &item).await?;
+//         tx.commit().await?;
+//         Ok(item.id)
+//     }
 
-    fn count<'life0, 'async_trait>(
-        pool: &'life0 sqlx::MySqlPool,
-    ) -> core::pin::Pin<
-        Box<
-            dyn core::future::Future<Output = anyhow::Result<i64>>
-                + core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-    {
-        todo!()
-    }
+//     async fn update(pool: &sqlx::MySqlPool, item: Customer) -> anyhow::Result<()> {
+//         todo!()
+//     }
 
-    fn exists<'life0, 'async_trait>(
-        pool: &'life0 sqlx::MySqlPool,
-        id: i32,
-    ) -> core::pin::Pin<
-        Box<
-            dyn core::future::Future<Output = anyhow::Result<bool>>
-                + core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-    {
-        todo!()
-    }
-}
+//     async fn delete(pool: &sqlx::MySqlPool, id: u64) -> anyhow::Result<()> {
+//         todo!()
+//     }
+
+//     async fn index(meili: &meilisearch_sdk::Client, item: &Customer) -> anyhow::Result<()> {
+//         let index = meili.index("customers");
+//         let key = item.id.to_string();
+
+//         index.add_documents(&[item], Some(&key)).await?;
+//         Ok(())
+//     }
+// }

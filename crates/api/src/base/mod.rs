@@ -1,11 +1,12 @@
+use std::sync::Arc;
+
 pub mod extractors;
 
 pub mod config;
-use sqlx::MySqlPool;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub pool: MySqlPool,
+    pub prisma: Arc<proto::prisma::PrismaClient>,
     pub meili: meilisearch_sdk::Client,
     pub config: config::Config,
 }
@@ -13,17 +14,17 @@ pub struct AppState {
 impl AppState {
     pub async fn new(config: config::Config) -> anyhow::Result<Self> {
         let meili = meilisearch_sdk::Client::new(&config.meili.uri, &config.meili.key);
-        let pool = proto::database::load(&config.mysql).await?;
-        Self::migrate(&pool).await?;
+        let prisma = Arc::new(proto::database::load(&config.mysql).await?);
+        // Self::migrate(&pool).await?;
         Ok(Self {
-            pool,
+            prisma,
             config,
             meili,
         })
     }
 
-    async fn migrate(pool: &MySqlPool) -> anyhow::Result<()> {
-        proto::database::migrate(pool).await?;
-        Ok(())
-    }
+    // async fn migrate(pool: &MySqlPool) -> anyhow::Result<()> {
+    //     proto::database::migrate(pool).await?;
+    //     Ok(())
+    // }
 }

@@ -1,0 +1,355 @@
+datasource db {
+    provider     = "mysql"
+    url          = env("DATABASE_URL")
+    relationMode = "prisma"
+}
+
+generator client {
+    // Corresponds to the cargo alias created earlier
+    provider = "cargo prisma"
+    // The location to generate the client. Is relative to the position of the schema
+    output   = "../src/prisma.rs"
+}
+
+model User {
+    id          String @id
+    displayName String
+}
+
+model Organization {
+    id         Int         @id @default(autoincrement())
+    name       String
+    warehouses Warehouse[]
+    Product    Product[]
+    Order      Order[]
+    createdAt  DateTime    @default(now())
+    updatedAt  DateTime    @updatedAt
+    Customer   Customer[]
+}
+
+// CREATE TABLE IF NOT EXISTS warehouses  (
+//     id SERIAL PRIMARY KEY,
+//     name TEXT NOT NULL,
+//     address TEXT NOT NULL,
+//     organization_id BIGINT UNSIGNED NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (organization_id) REFERENCES organizations(id)
+// );
+model Warehouse {
+    id             Int           @id @default(autoincrement())
+    name           String
+    address        String
+    organizationId Int
+    organization   Organization  @relation(fields: [organizationId], references: [id])
+    managers       Manager[]
+    order          Order[]
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+    StorageCell    StorageCell[]
+
+    @@index([organizationId])
+}
+
+// CREATE TABLE IF NOT EXISTS managers (
+//     id SERIAL PRIMARY KEY,
+//     username TEXT NOT NULL,
+//     email TEXT NOT NULL,
+//     password TEXT NOT NULL,
+//     organization_id BIGINT UNSIGNED NOT NULL,
+//     warehouse_id BIGINT UNSIGNED NOT NULL,
+//     acl JSON NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (organization_id) REFERENCES organizations(id),
+//     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
+// );
+model Manager {
+    id                Int              @id @default(autoincrement())
+    username          String
+    email             String
+    password          String
+    warehouseId       Int
+    warehouse         Warehouse        @relation(fields: [warehouseId], references: [id])
+    contact           ManagerContact[]
+    order             Order[]
+    assignedNotes     OrderNote[]
+    assignedCustomers Customer[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([warehouseId])
+}
+
+// CREATE TABLE IF NOT EXISTS managers_contacts (
+//     id SERIAL PRIMARY KEY,
+//     manager_id BIGINT UNSIGNED NOT NULL,
+//     contact_type TEXT NOT NULL,
+//     contact TEXT NOT NULL,
+//     FOREIGN KEY (manager_id) REFERENCES managers(id)
+// );
+model ManagerContact {
+    id          Int     @id @default(autoincrement())
+    managerId   Int
+    manager     Manager @relation(fields: [managerId], references: [id])
+    contactType String
+    contact     String
+
+    @@index([managerId])
+    @@map("Contact")
+}
+
+// CREATE TABLE IF NOT EXISTS products (
+//     id SERIAL PRIMARY KEY,
+//     name TEXT NOT NULL,
+//     description TEXT NOT NULL,
+//     price INTEGER NOT NULL,
+//     organization_id BIGINT UNSIGNED NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (organization_id) REFERENCES organizations(id)
+// );
+model Product {
+    id             Int            @id @default(autoincrement())
+    name           String
+    description    String
+    price          Int
+    organizationId Int
+    organization   Organization   @relation(fields: [organizationId], references: [id])
+    createdAt      DateTime       @default(now())
+    updatedAt      DateTime       @updatedAt
+    images         ProductImage[]
+
+    stored   StorageProduct[]
+    inOrders OrderProducts[]
+
+    @@index([organizationId])
+}
+
+// CREATE TABLE IF NOT EXISTS orders (
+//     id SERIAL PRIMARY KEY,
+//     manager_id BIGINT UNSIGNED NOT NULL,
+//     organization_id BIGINT UNSIGNED NOT NULL,
+//     warehouse_id BIGINT UNSIGNED,
+//     status TEXT NOT NULL,
+//     products_id BIGINT UNSIGNED NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (manager_id) REFERENCES managers(id),
+//     FOREIGN KEY (organization_id) REFERENCES organizations(id),
+//     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+//     FOREIGN KEY (products_id) REFERENCES products(id)
+// );
+model Order {
+    id             Int             @id @default(autoincrement())
+    managerId      Int?
+    manager        Manager?        @relation(fields: [managerId], references: [id])
+    organizationId Int
+    organization   Organization    @relation(fields: [organizationId], references: [id])
+    warehouseId    Int
+    warehouse      Warehouse       @relation(fields: [warehouseId], references: [id])
+    customerId     Int
+    customer       Customer        @relation(fields: [customerId], references: [id])
+    status         String
+    products       OrderProducts[]
+    notes          OrderNote[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([managerId])
+    @@index([organizationId])
+    @@index([warehouseId])
+    @@index([customerId])
+}
+
+// CREATE TABLE IF NOT EXISTS order_products (
+//     id SERIAL PRIMARY KEY,
+//     order_id BIGINT UNSIGNED NOT NULL,
+//     product_id BIGINT UNSIGNED NOT NULL,
+//     quantity BIGINT UNSIGNED NOT NULL,
+//     FOREIGN KEY (order_id) REFERENCES orders(id),
+//     FOREIGN KEY (product_id) REFERENCES products(id)
+// );
+model OrderProducts {
+    id        Int     @id @default(autoincrement())
+    orderId   Int
+    order     Order   @relation(fields: [orderId], references: [id])
+    productId Int
+    product   Product @relation(fields: [productId], references: [id])
+    quantity  Int
+
+    @@index([orderId])
+    @@index([productId])
+}
+
+// CREATE TABLE IF NOT EXISTS notes (
+//     id SERIAL PRIMARY KEY,
+//     manager_id BIGINT UNSIGNED,
+//     body TEXT NOT NULL,
+//     order_id BIGINT UNSIGNED NOT NULL,
+//     created_by BIGINT UNSIGNED NOT NULL,
+//     scheduled_at TIMESTAMP,
+//     completed_at TIMESTAMP,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (manager_id) REFERENCES managers(id),
+//     FOREIGN KEY (created_by) REFERENCES managers(id),
+//     FOREIGN KEY (order_id) REFERENCES orders(id)
+// );
+model OrderNote {
+    id                Int      @id @default(autoincrement())
+    assignedManagerId Int?
+    assign            Manager? @relation(fields: [assignedManagerId], references: [id])
+    body              String
+    orderId           Int
+    order             Order    @relation(fields: [orderId], references: [id])
+    scheduledAt       DateTime @default(now())
+    completedAt       DateTime @default(now())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([orderId])
+    @@index([assignedManagerId])
+}
+
+// CREATE TABLE IF NOT EXISTS storage_cells (
+//     id SERIAL PRIMARY KEY,
+//     warehouse_id BIGINT UNSIGNED NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id)
+// );
+model StorageCell {
+    id          Int              @id @default(autoincrement())
+    warehouseId Int
+    warehouse   Warehouse        @relation(fields: [warehouseId], references: [id])
+    products    StorageProduct[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([warehouseId])
+}
+
+// CREATE TABLE IF NOT EXISTS storage_product (
+//     id SERIAL PRIMARY KEY,
+//     product_id BIGINT UNSIGNED NOT NULL,
+//     warehouse_id BIGINT UNSIGNED NOT NULL,
+//     cell_id BIGINT UNSIGNED NOT NULL,
+//     quantity BIGINT UNSIGNED NOT NULL, -- Idealy must to be always 1 for precision in storage
+//     FOREIGN KEY (product_id) REFERENCES products(id),
+//     FOREIGN KEY (warehouse_id) REFERENCES warehouses(id),
+//     FOREIGN KEY (cell_id) REFERENCES storage_cells(id)
+// );
+model StorageProduct {
+    id        Int         @id @default(autoincrement())
+    productId Int
+    product   Product     @relation(fields: [productId], references: [id])
+    cellId    Int
+    cell      StorageCell @relation(fields: [cellId], references: [id])
+    quantity  Int // Idealy must to be always 1 for precision in storage
+
+    @@index([productId])
+    @@index([cellId])
+}
+
+// CREATE TABLE IF NOT EXISTS images (
+//     id SERIAL PRIMARY KEY,
+//     name TEXT NOT NULL,
+//     description TEXT NOT NULL,
+//     url TEXT NOT NULL,
+//     product_id BIGINT UNSIGNED NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (product_id) REFERENCES products(id)
+// );
+model ProductImage {
+    id        Int     @id @default(autoincrement())
+    alt       String
+    url       String
+    productId Int
+    product   Product @relation(fields: [productId], references: [id])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([productId])
+}
+
+// CREATE TABLE IF NOT EXISTS customers (
+//     id SERIAL PRIMARY KEY,
+//     name TEXT NOT NULL,
+//     address TEXT NOT NULL,
+//     organization_id BIGINT UNSIGNED NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (organization_id) REFERENCES organizations(id)
+// );
+model Customer {
+    id                Int               @id @default(autoincrement())
+    name              String
+    organizationId    Int
+    organization      Organization      @relation(fields: [organizationId], references: [id])
+    orders            Order[]
+    assignedManagerId Int?
+    manager           Manager?          @relation(fields: [assignedManagerId], references: [id])
+    contacts          CustomerContact[]
+    messageRooms      MessageRoom[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([organizationId])
+    @@index([assignedManagerId])
+}
+
+// CREATE TABLE IF NOT EXISTS customer_contacts (
+//     id SERIAL PRIMARY KEY,
+//     customer_id BIGINT UNSIGNED NOT NULL,
+//     contact_type TEXT NOT NULL,
+//     contact TEXT NOT NULL,
+//     FOREIGN KEY (customer_id) REFERENCES customers(id)
+// );
+model CustomerContact {
+    id          Int      @id @default(autoincrement())
+    customerId  Int
+    customer    Customer @relation(fields: [customerId], references: [id])
+    contactType String
+    contact     String
+
+    @@index([customerId])
+}
+
+model MessageRoom {
+    id         Int       @id @default(autoincrement())
+    customerId Int
+    customer   Customer  @relation(fields: [customerId], references: [id])
+    messages   Message[]
+
+    @@index([customerId])
+}
+
+// CREATE TABLE IF NOT EXISTS messages (
+//     id SERIAL PRIMARY KEY,
+//     body TEXT NOT NULL,
+//     customer_id BIGINT UNSIGNED NOT NULL,
+//     manager_id BIGINT UNSIGNED NOT NULL,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+//     FOREIGN KEY (manager_id) REFERENCES managers(id),
+//     FOREIGN KEY (customer_id) REFERENCES customers(id)
+// );
+model Message {
+    id     Int         @id @default(autoincrement())
+    body   String
+    roomId Int
+    room   MessageRoom @relation(fields: [roomId], references: [id])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([roomId])
+}

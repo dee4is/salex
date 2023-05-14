@@ -5,9 +5,12 @@ use axum::{
 };
 
 pub struct AuthData {
-    pub organization: String,
-    pub manager: String,
+    pub organization: i32,
+    pub manager: i32,
 }
+
+const MANAGER_HEADER: &str = "X-Manager";
+const ORGANIZATION_HEADER: &str = "X-Organization";
 
 #[async_trait]
 impl<S> FromRequestParts<S> for AuthData
@@ -19,29 +22,23 @@ where
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         let organization = parts
             .headers
-            .get(proto::organization::header::ORGANIZATION)
+            .get(ORGANIZATION_HEADER)
             .ok_or((
                 StatusCode::BAD_REQUEST,
-                format!(
-                    "{} header is missing",
-                    proto::organization::header::ORGANIZATION
-                ),
+                format!("{} header is missing", ORGANIZATION_HEADER),
             ))
             .unwrap();
         let manager = parts
             .headers
-            .get(proto::manager::header::MANAGER)
+            .get(MANAGER_HEADER)
             .ok_or((
                 StatusCode::BAD_REQUEST,
-                format!(
-                    "{} header is missing",
-                    proto::organization::header::ORGANIZATION
-                ),
+                format!("{} header is missing", MANAGER_HEADER),
             ))
             .unwrap();
         Ok(AuthData {
-            organization: organization.clone().to_str().unwrap().to_string(),
-            manager: manager.clone().to_str().unwrap().to_string(),
+            organization: organization.clone().to_str().unwrap().parse().unwrap(),
+            manager: manager.clone().to_str().unwrap().parse().unwrap(),
         })
     }
 }
