@@ -12,3 +12,4 @@ Cargo.lock
 **/config.toml
 
 .env
+crates/proto/src/prisma.rs
